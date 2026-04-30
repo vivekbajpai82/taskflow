@@ -1,34 +1,39 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getMe } from '../services/api';
 
-export default function Navbar() {
-  const { user, loading, logoutUser } = useAuth();
-  const navigate = useNavigate();
+const AuthContext = createContext(null);
 
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/login');
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      getMe()
+        .then(res => setUser(res.data))
+        .catch(() => localStorage.removeItem('token'))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const loginUser = (userData) => {
+    localStorage.setItem('token', userData.token);
+    setUser(userData);
   };
 
-  if (loading) return <nav className="navbar"><NavLink to="/" className="navbar-brand">⚡ TaskFlow</NavLink></nav>;
+  const logoutUser = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
   return (
-    <nav className="navbar">
-      <NavLink to="/" className="navbar-brand">⚡ TaskFlow</NavLink>
-      {user ? (
-        <>
-          <div className="navbar-links">
-            <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
-            <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Projects</NavLink>
-          </div>
-          <div className="navbar-right">
-            <span className="user-badge">👤 {user?.name}</span>
-            <span className={`role-badge ${user?.role}`}>{user?.role}</span>
-            <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Logout</button>
-          </div>
-        </>
-      ) : null}
-    </nav>
+    <AuthContext.Provider value={{ user, loading, loginUser, logoutUser }}>
+      {children}
+    </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => useContext(AuthContext);
