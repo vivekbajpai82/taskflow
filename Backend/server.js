@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
-const projectRoutes = require('./routes/projects');
+const projectRoutes = require('./routes/Projects');
 const taskRoutes = require('./routes/tasks');
 const userRoutes = require('./routes/users');
 
